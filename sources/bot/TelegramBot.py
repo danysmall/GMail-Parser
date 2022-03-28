@@ -38,6 +38,8 @@ class BotFather():
             self._api_id,
             self._api_hash)
 
+        self._session.session.set_dc(2, '149.154.167.50', 443)
+
         self._callback_dict = dict()
 
     async def _async_run(self: 'BotFather'):
@@ -179,22 +181,23 @@ class BotFather():
         await self._session.run_until_disconnected()
 
     def _get_base(self: 'BotFather', event_id):
-        mails = scrapper.GMail(
-            token_filename=self._token_filename,
-            creds_filename=self._creds_filename)
-
-        return mails.get_file(
-            from_date=(
-                self._callback_dict[event_id]['day_start'],
-                self._callback_dict[event_id]['month_start'],
-                self._callback_dict[event_id]['year_start']),
-            to_date=(
-                self._callback_dict[event_id]['day_end'],
-                self._callback_dict[event_id]['month_end'],
-                self._callback_dict[event_id]['year_end']
-            ),
-            message_id=str(event_id)
-        )
+        return None
+        # mails = scrapper.GMail(
+        #     token_filename=self._token_filename,
+        #     creds_filename=self._creds_filename)
+        #
+        # return mails.get_file(
+        #     from_date=(
+        #         self._callback_dict[event_id]['day_start'],
+        #         self._callback_dict[event_id]['month_start'],
+        #         self._callback_dict[event_id]['year_start']),
+        #     to_date=(
+        #         self._callback_dict[event_id]['day_end'],
+        #         self._callback_dict[event_id]['month_end'],
+        #         self._callback_dict[event_id]['year_end']
+        #     ),
+        #     message_id=str(event_id)
+        # )
 
     def run(self: 'BotFather'):
         """Run bot until disconnect."""
