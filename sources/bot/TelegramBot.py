@@ -44,7 +44,7 @@ class BotFather():
 
     async def _async_run(self: 'BotFather'):
         await self._session.start(bot_token=self._bot_token)
-
+        print('Bot started')
         @self._session.on(events.NewMessage(pattern='/start'))
         async def _command_start(event):
             # Send </start> command message
