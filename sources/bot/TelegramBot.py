@@ -8,7 +8,7 @@ import scrapper
 
 API_ID = 7212719
 API_HASH = '3778859a51ffe2951f3abe886d03d0f1'
-BOT_TOKEN = '5238448407:AAFC6Y2qesRNmXgbzTQ3KbvRpLaHR24jgmE'
+BOT_TOKEN = '5207506106:AAFS5ylbpNueqMC4NtzH7bSCg9GfvFDQgKY'
 BOT_SESSION_NAME = 'bot-session'
 
 
@@ -36,9 +36,11 @@ class BotFather():
         self._callback_dict = dict()
 
     async def _async_run(self: 'BotFather'):
+        print('Started')
         self._session = TelegramClient(self._session_name, self._api_id, self._api_hash)
         self._session.session.set_dc(2, '149.154.167.50', 443)
         await self._session.start(bot_token=self._bot_token)
+        print('Session completed')
 
         @self._session.on(events.NewMessage(pattern='/start'))
         async def _command_start(event):
