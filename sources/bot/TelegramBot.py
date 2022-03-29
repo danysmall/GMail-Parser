@@ -72,107 +72,107 @@ class BotFather():
         async def _get_callback_dict(event):
             print(self._callback_dict)
 
-        @self._session.on(events.CallbackQuery)
-        async def _callback_query(event):
-            # print('CALLBACK\n', event)
-            # await event.edit('Спасибо за клик!')
-            event_id = event.original_update.msg_id
-            print(event)
-
-            if event.data == b'date_start':
-                self._callback_dict[event_id]['stage'] = 1
-                await event.edit(
-                    inline.INLINE_MESSAGES['input_day']['message'],
-                    buttons=inline.INLINE_MESSAGES['input_day']['buttons'])
-
-            elif event.data == b'date_end':
-                self._callback_dict[event_id]['stage'] = 2
-                await event.edit(
-                    inline.INLINE_MESSAGES['input_day']['message'],
-                    buttons=inline.INLINE_MESSAGES['input_day']['buttons'])
-
-            elif event.data == b'start':
-                self._callback_dict[event_id]['stage'] = 3
-
-                if check_dates(
-                    start_date=(
-                        self._callback_dict[event_id]['day_start'],
-                        self._callback_dict[event_id]['month_start'],
-                        self._callback_dict[event_id]['year_start']),
-                    end_date=(
-                        self._callback_dict[event_id]['day_end'],
-                        self._callback_dict[event_id]['month_end'],
-                        self._callback_dict[event_id]['year_end']
-                    )
-                ):
-                    await event.edit(inline.MESSAGES['base_begin'].format(
-                        event_id))
-
-                    f_name = self._get_base(event_id)
-                    if f_name is None:
-                        await event.edit(inline.MESSAGES['base_failed'])
-                    else:
-                        f_upd = await self._session.upload_file(f_name)
-                        await event.edit(inline.MESSAGES['base_end'].format(
-                            f_name.split('/')[1]))
-                        await self._session.send_file(
-                            event.original_update.user_id,
-                            file=f_upd)
-                else:
-                    await event.edit('Что-то пошло не так!')
-
-            elif not str(event.data).find('day') == -1:
-                _, number = event.data.decode('utf-8').split(':')
-
-                # if user choise was start date
-                if self._callback_dict[event_id]['stage'] == 1:
-                    self._callback_dict[event_id]['day_start'] = int(number)
-
-                # if user choise was end date
-                elif self._callback_dict[event_id]['stage'] == 2:
-                    self._callback_dict[event_id]['day_end'] = int(number)
-
-                await event.edit(
-                    inline.INLINE_MESSAGES['input_month']['message'],
-                    buttons=inline.INLINE_MESSAGES['input_month']['buttons'])
-
-            elif not str(event.data).find('month') == -1:
-                _, number = event.data.decode('utf-8').split(':')
-
-                # if user choise was start date
-                if self._callback_dict[event_id]['stage'] == 1:
-                    self._callback_dict[event_id]['month_start'] = int(number)
-
-                # if user choise was end date
-                elif self._callback_dict[event_id]['stage'] == 2:
-                    self._callback_dict[event_id]['month_end'] = int(number)
-
-                await event.edit(
-                    inline.INLINE_MESSAGES['input_year']['message'],
-                    buttons=inline.INLINE_MESSAGES['input_year']['buttons'])
-
-            elif not str(event.data).find('year') == -1:
-                _, number = event.data.decode('utf-8').split(':')
-
-                # if user choise was start date
-                if self._callback_dict[event_id]['stage'] == 1:
-                    self._callback_dict[event_id]['year_start'] = int(number)
-
-                # if user choise was end date
-                elif self._callback_dict[event_id]['stage'] == 2:
-                    self._callback_dict[event_id]['year_end'] = int(number)
-
-                await event.edit(
-                    inline.INLINE_MESSAGES['start']['message'].format(
-                        day_start=self._callback_dict[event_id]['day_start'],
-                        month_start=self._callback_dict[event_id]['month_start'],
-                        year_start=self._callback_dict[event_id]['year_start'],
-                        day_end=self._callback_dict[event_id]['day_end'],
-                        month_end=self._callback_dict[event_id]['month_end'],
-                        year_end=self._callback_dict[event_id]['year_end'],
-                    ),
-                    buttons=inline.INLINE_MESSAGES['start']['buttons'],
-                    parse_mode='html')
+        # @self._session.on(events.CallbackQuery)
+        # async def _callback_query(event):
+        #     # print('CALLBACK\n', event)
+        #     # await event.edit('Спасибо за клик!')
+        #     event_id = event.original_update.msg_id
+        #     print(event)
+        #
+        #     if event.data == b'date_start':
+        #         self._callback_dict[event_id]['stage'] = 1
+        #         await event.edit(
+        #             inline.INLINE_MESSAGES['input_day']['message'],
+        #             buttons=inline.INLINE_MESSAGES['input_day']['buttons'])
+        #
+        #     elif event.data == b'date_end':
+        #         self._callback_dict[event_id]['stage'] = 2
+        #         await event.edit(
+        #             inline.INLINE_MESSAGES['input_day']['message'],
+        #             buttons=inline.INLINE_MESSAGES['input_day']['buttons'])
+        #
+        #     elif event.data == b'start':
+        #         self._callback_dict[event_id]['stage'] = 3
+        #
+        #         if check_dates(
+        #             start_date=(
+        #                 self._callback_dict[event_id]['day_start'],
+        #                 self._callback_dict[event_id]['month_start'],
+        #                 self._callback_dict[event_id]['year_start']),
+        #             end_date=(
+        #                 self._callback_dict[event_id]['day_end'],
+        #                 self._callback_dict[event_id]['month_end'],
+        #                 self._callback_dict[event_id]['year_end']
+        #             )
+        #         ):
+        #             await event.edit(inline.MESSAGES['base_begin'].format(
+        #                 event_id))
+        #
+        #             f_name = self._get_base(event_id)
+        #             if f_name is None:
+        #                 await event.edit(inline.MESSAGES['base_failed'])
+        #             else:
+        #                 f_upd = await self._session.upload_file(f_name)
+        #                 await event.edit(inline.MESSAGES['base_end'].format(
+        #                     f_name.split('/')[1]))
+        #                 await self._session.send_file(
+        #                     event.original_update.user_id,
+        #                     file=f_upd)
+        #         else:
+        #             await event.edit('Что-то пошло не так!')
+        #
+        #     elif not str(event.data).find('day') == -1:
+        #         _, number = event.data.decode('utf-8').split(':')
+        #
+        #         # if user choise was start date
+        #         if self._callback_dict[event_id]['stage'] == 1:
+        #             self._callback_dict[event_id]['day_start'] = int(number)
+        #
+        #         # if user choise was end date
+        #         elif self._callback_dict[event_id]['stage'] == 2:
+        #             self._callback_dict[event_id]['day_end'] = int(number)
+        #
+        #         await event.edit(
+        #             inline.INLINE_MESSAGES['input_month']['message'],
+        #             buttons=inline.INLINE_MESSAGES['input_month']['buttons'])
+        #
+        #     elif not str(event.data).find('month') == -1:
+        #         _, number = event.data.decode('utf-8').split(':')
+        #
+        #         # if user choise was start date
+        #         if self._callback_dict[event_id]['stage'] == 1:
+        #             self._callback_dict[event_id]['month_start'] = int(number)
+        #
+        #         # if user choise was end date
+        #         elif self._callback_dict[event_id]['stage'] == 2:
+        #             self._callback_dict[event_id]['month_end'] = int(number)
+        #
+        #         await event.edit(
+        #             inline.INLINE_MESSAGES['input_year']['message'],
+        #             buttons=inline.INLINE_MESSAGES['input_year']['buttons'])
+        #
+        #     elif not str(event.data).find('year') == -1:
+        #         _, number = event.data.decode('utf-8').split(':')
+        #
+        #         # if user choise was start date
+        #         if self._callback_dict[event_id]['stage'] == 1:
+        #             self._callback_dict[event_id]['year_start'] = int(number)
+        #
+        #         # if user choise was end date
+        #         elif self._callback_dict[event_id]['stage'] == 2:
+        #             self._callback_dict[event_id]['year_end'] = int(number)
+        #
+        #         await event.edit(
+        #             inline.INLINE_MESSAGES['start']['message'].format(
+        #                 day_start=self._callback_dict[event_id]['day_start'],
+        #                 month_start=self._callback_dict[event_id]['month_start'],
+        #                 year_start=self._callback_dict[event_id]['year_start'],
+        #                 day_end=self._callback_dict[event_id]['day_end'],
+        #                 month_end=self._callback_dict[event_id]['month_end'],
+        #                 year_end=self._callback_dict[event_id]['year_end'],
+        #             ),
+        #             buttons=inline.INLINE_MESSAGES['start']['buttons'],
+        #             parse_mode='html')
 
         @self._session.on(events.NewMessage())
         async def _any_message(event):
