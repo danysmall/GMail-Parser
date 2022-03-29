@@ -42,7 +42,7 @@ class BotFather():
         self._callback_dict = dict()
 
     async def _async_run(self: 'BotFather'):
-        print('Bot started')
+        print('Bot started', self._session)
         await self._session.start(bot_token=self._bot_token)
         print('Bot started')
         # @self._session.on(events.NewMessage(pattern='/start'))
