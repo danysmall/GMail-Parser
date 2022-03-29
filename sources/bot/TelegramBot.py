@@ -176,27 +176,27 @@ class BotFather():
 
         @self._session.on(events.NewMessage())
         async def _any_message(event):
-            pass
+            print(event)
 
         await self._session.run_until_disconnected()
 
-    def _get_base(self: 'BotFather', event_id):
-        mails = scrapper.GMail(
-            token_filename=self._token_filename,
-            creds_filename=self._creds_filename)
-
-        return mails.get_file(
-            from_date=(
-                self._callback_dict[event_id]['day_start'],
-                self._callback_dict[event_id]['month_start'],
-                self._callback_dict[event_id]['year_start']),
-            to_date=(
-                self._callback_dict[event_id]['day_end'],
-                self._callback_dict[event_id]['month_end'],
-                self._callback_dict[event_id]['year_end']
-            ),
-            message_id=str(event_id)
-        )
+    # def _get_base(self: 'BotFather', event_id):
+    #     mails = scrapper.GMail(
+    #         token_filename=self._token_filename,
+    #         creds_filename=self._creds_filename)
+    #
+    #     return mails.get_file(
+    #         from_date=(
+    #             self._callback_dict[event_id]['day_start'],
+    #             self._callback_dict[event_id]['month_start'],
+    #             self._callback_dict[event_id]['year_start']),
+    #         to_date=(
+    #             self._callback_dict[event_id]['day_end'],
+    #             self._callback_dict[event_id]['month_end'],
+    #             self._callback_dict[event_id]['year_end']
+    #         ),
+    #         message_id=str(event_id)
+    #     )
 
     def run(self: 'BotFather'):
         """Run bot until disconnect."""
@@ -210,23 +210,23 @@ class BotFather():
         asyncio.run(self._async_stop())
 
 
-def check_dates(
-    start_date: tuple[int, int, int] = None,
-    end_date: tuple[int, int, int] = None
-) -> bool:
-    """Check two dates for first is less that second.
-
-    -------------------------------------------------
-    • Returns <True> if start_date < end_date
-    • Returns <False> if start_date > end_date
-    """
-    try:
-        temp = [snd - fst for fst, snd in zip(start_date, end_date)]
-        if (temp[0] + temp[1] * 30 + temp[2] * 365) >= 0:
-            return True
-        return False
-    except TypeError:
-        return False
+# def check_dates(
+#     start_date: tuple[int, int, int] = None,
+#     end_date: tuple[int, int, int] = None
+# ) -> bool:
+#     """Check two dates for first is less that second.
+#
+#     -------------------------------------------------
+#     • Returns <True> if start_date < end_date
+#     • Returns <False> if start_date > end_date
+#     """
+#     try:
+#         temp = [snd - fst for fst, snd in zip(start_date, end_date)]
+#         if (temp[0] + temp[1] * 30 + temp[2] * 365) >= 0:
+#             return True
+#         return False
+#     except TypeError:
+#         return False
 
 
 if __name__ == '__main__':
