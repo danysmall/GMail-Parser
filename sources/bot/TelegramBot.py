@@ -38,11 +38,12 @@ class BotFather():
             self._api_id,
             self._api_hash)
 
-        self._session.session.set_dc(2, '149.154.167.50', 443)
+        # self._session.session.set_dc(2, '149.154.167.50', 443)
 
         self._callback_dict = dict()
 
     async def _async_run(self: 'BotFather'):
+        print('Bot started')
         await self._session.start(bot_token=self._bot_token)
         print('Bot started')
         @self._session.on(events.NewMessage(pattern='/start'))
