@@ -38,41 +38,40 @@ class BotFather():
             self._api_id,
             self._api_hash)
 
-        # self._session.session.set_dc(2, '149.154.167.50', 443)
-
+        self._session.session.set_dc(2, '149.154.167.50', 443)
         self._callback_dict = dict()
 
     async def _async_run(self: 'BotFather'):
         print('Bot started')
         await self._session.start(bot_token=self._bot_token)
         print('Bot started')
-        @self._session.on(events.NewMessage(pattern='/start'))
-        async def _command_start(event):
-            # Send </start> command message
-            message = await self._session.send_message(
-                event.message.peer_id.user_id,
-                inline.INLINE_MESSAGES['start']['message'].format(
-                    day_start='01', month_start='01', year_start='1970',
-                    day_end='01', month_end='01', year_end='1970'),
-                buttons=inline.INLINE_MESSAGES['start']['buttons'],
-                parse_mode='html')
-
-            if message.id not in self._callback_dict:
-                self._callback_dict[message.id] = {
-                    'message': message,
-                    'stage': 0,
-                    'day_start': None,
-                    'month_start': None,
-                    'year_start': None,
-                    'day_end': None,
-                    'month_end': None,
-                    'year_end': None
-                }
-
-        @self._session.on(events.NewMessage(pattern='/info'))
-        async def _get_callback_dict(event):
-            print(self._callback_dict)
-
+        # @self._session.on(events.NewMessage(pattern='/start'))
+        # async def _command_start(event):
+        #     # Send </start> command message
+        #     message = await self._session.send_message(
+        #         event.message.peer_id.user_id,
+        #         inline.INLINE_MESSAGES['start']['message'].format(
+        #             day_start='01', month_start='01', year_start='1970',
+        #             day_end='01', month_end='01', year_end='1970'),
+        #         buttons=inline.INLINE_MESSAGES['start']['buttons'],
+        #         parse_mode='html')
+        #
+        #     if message.id not in self._callback_dict:
+        #         self._callback_dict[message.id] = {
+        #             'message': message,
+        #             'stage': 0,
+        #             'day_start': None,
+        #             'month_start': None,
+        #             'year_start': None,
+        #             'day_end': None,
+        #             'month_end': None,
+        #             'year_end': None
+        #         }
+        #
+        # @self._session.on(events.NewMessage(pattern='/info'))
+        # async def _get_callback_dict(event):
+        #     print(self._callback_dict)
+        #
         # @self._session.on(events.CallbackQuery)
         # async def _callback_query(event):
         #     # print('CALLBACK\n', event)
