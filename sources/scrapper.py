@@ -57,10 +57,11 @@ class GMail():
             # TODO(developer) - Handle errors from gmail API.
             print(f'An error occurred: {error}')
 
-    async def get_messages(
+    def get_messages(
         self,
         from_data: tuple[int, int, int] = None,
-        to_data: tuple[int, int, int] = None
+        to_data: tuple[int, int, int] = None,
+        thread_name: str = None
     ):
         """Get list of messages from date to date.
 
@@ -75,24 +76,49 @@ class GMail():
             f'{to_data[0]}.{to_data[1]}.{to_data[2]}',
             '%d.%m.%Y').timestamp()) * 1000
 
-        request = self._service.users().messages().list(
-            userId='me', maxResults=500, q='На турбо-странице')
+        try:
+            request = self._service.users().messages().list(
+                userId='me', maxResults=500, q='На турбо-странице')
 
-        response = request.execute()
+            response = request.execute()
+        except Exception:
+            pass
 
         att_ids = dict()
+        flag = True
+        msg_count = 500
 
         while True:
 
             if 'messages' not in response:
                 continue
 
-            print('New 500')
-            for item in response['messages']:
-                id = item['id']
+            print(f'{thread_name}: MSG {msg_count}')
+            msg_count += 500
 
-                msg = self._service.users().messages().get(
-                    userId='me', id=id).execute()
+            try:
+                temp_msg = self._service.users().messages().get(
+                    userId='me', id=response['messages'][-1]['id']).execute()
+
+                if int(temp_msg['internalDate']) > to_timestamp:
+                    flag = True
+                else:
+                    flag = False
+            except Exception:
+                pass
+
+            for item in response['messages']:
+                if flag:
+                    break
+
+                id = item['id']
+                print(f'{thread_name}: {id}')
+
+                try:
+                    msg = self._service.users().messages().get(
+                        userId='me', id=id).execute()
+                except Exception:
+                    continue
 
                 if int(msg['internalDate']) < from_timestamp:
                     break
@@ -110,20 +136,27 @@ class GMail():
                 for key in att_ids:
                     res = self._service.users().messages().attachments().get(
                         userId='me', messageId=id, id=att_ids[key]).execute()
-                    with open(f'csv/{key}', 'wb') as file:
-                        file.write(base64.urlsafe_b64decode(
-                            res['data']))
+
+                    try:
+                        with open(f'csv/{key}', 'wb') as file:
+                            file.write(base64.urlsafe_b64decode(
+                                res['data']))
+                    except Exception:
+                        pass
 
             if 'nextPageToken' not in response:
                 break
 
-            request = self._service.users().messages().list_next(
-                request, response)
-            response = request.execute()
+            try:
+                request = self._service.users().messages().list_next(
+                    request, response)
+                response = request.execute()
+            except Exception:
+                continue
 
         self._files = att_ids
 
-    async def _parse_files(self: 'GMail', unique: str):
+    def _parse_files(self: 'GMail', unique: str):
         vars = list()
         data = list()
 
@@ -169,11 +202,11 @@ class GMail():
         os.remove(f'temp_{unique}.csv')
         return f'excel/{unique}.xlsx'
 
-    async def get_file(
+    def get_file(
         self: 'GMail',
         from_date: tuple[int, int, int] = None,
         to_date: tuple[int, int, int] = None,
-        message_id: str = None
+        message_id: str = None,
     ) -> str:
-        await self.get_messages(from_date, to_date)
-        return await self._parse_files(message_id)
+        self.get_messages(from_date, to_date, message_id)
+        return self._parse_files(message_id)

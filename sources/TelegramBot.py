@@ -2,6 +2,7 @@
 from telethon import TelegramClient, events
 import inline
 import asyncio
+from threading import Thread
 
 import scrapper
 
@@ -37,7 +38,8 @@ class BotFather():
 
     async def _async_run(self: 'BotFather'):
         print('Started')
-        self._session = TelegramClient(self._session_name, self._api_id, self._api_hash)
+        self._session = TelegramClient(
+            self._session_name, self._api_id, self._api_hash)
         self._session.session.set_dc(2, '149.154.167.50', 443)
         await self._session.start(bot_token=self._bot_token)
         print('Session completed')
@@ -71,10 +73,7 @@ class BotFather():
 
         @self._session.on(events.CallbackQuery)
         async def _callback_query(event):
-            # print('CALLBACK\n', event)
-            # await event.edit('Спасибо за клик!')
             event_id = event.original_update.msg_id
-            print(event)
 
             if event.data == b'date_start':
                 self._callback_dict[event_id]['stage'] = 1
@@ -105,16 +104,11 @@ class BotFather():
                     await event.edit(inline.MESSAGES['base_begin'].format(
                         event_id))
 
-                    f_name = await self._get_base(event_id)
-                    if f_name is None:
-                        await event.edit(inline.MESSAGES['base_failed'])
-                    else:
-                        f_upd = await self._session.upload_file(f_name)
-                        await event.edit(inline.MESSAGES['base_end'].format(
-                            f_name.split('/')[1]))
-                        await self._session.send_file(
-                            event.original_update.user_id,
-                            file=f_upd)
+                    process = Thread(
+                        target=self._get_base,
+                        args=(event_id, event)
+                    )
+                    process.start()
                 else:
                     await event.edit('Что-то пошло не так!')
 
@@ -173,16 +167,16 @@ class BotFather():
 
         @self._session.on(events.NewMessage())
         async def _any_message(event):
-            print(event)
+            print(f'Event {event.original_update.message.id}')
 
         await self._session.run_until_disconnected()
 
-    async def _get_base(self: 'BotFather', event_id):
+    def _get_base(self: 'BotFather', event_id, event):
         mails = scrapper.GMail(
             token_filename=self._token_filename,
             creds_filename=self._creds_filename)
 
-        return await mails.get_file(
+        f_name = mails.get_file(
             from_date=(
                 self._callback_dict[event_id]['day_start'],
                 self._callback_dict[event_id]['month_start'],
@@ -192,8 +186,22 @@ class BotFather():
                 self._callback_dict[event_id]['month_end'],
                 self._callback_dict[event_id]['year_end']
             ),
-            message_id=str(event_id)
+            message_id=str(event_id),
         )
+
+        asyncio.run(self._send_base(f_name, event))
+
+    async def _send_base(self: 'BotFather', f_name, event):
+
+        if f_name is None:
+            await event.edit(inline.MESSAGES['base_failed'])
+        else:
+            f_upd = await self._session.upload_file(f_name)
+            await event.edit(inline.MESSAGES['base_end'].format(
+                f_name.split('/')[1]))
+            await self._session.send_file(
+                event.original_update.user_id,
+                file=f_upd)
 
     def run(self: 'BotFather'):
         """Run bot until disconnect."""
