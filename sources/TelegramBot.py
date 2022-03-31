@@ -189,10 +189,11 @@ class BotFather():
             message_id=str(event_id),
         )
 
+        print('Send Base')
         asyncio.run(self._send_base(f_name, event))
 
     async def _send_base(self: 'BotFather', f_name, event):
-
+        print('Send Base function')
         if f_name is None:
             await event.edit(inline.MESSAGES['base_failed'])
         else:
