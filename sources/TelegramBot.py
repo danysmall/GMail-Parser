@@ -189,7 +189,7 @@ class BotFather():
             message_id=str(event_id),
         )
 
-        print('Send Base')
+        print(f'Send Base {f_name}')
         asyncio.run(self._send_base(f_name, event))
 
     async def _send_base(self: 'BotFather', f_name, event):
