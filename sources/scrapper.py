@@ -125,6 +125,8 @@ class GMail():
                 if int(msg['internalDate']) > to_timestamp:
                     continue
 
+                print(f'{from_timestamp}:{msg["internalDate"]}:{to_timestamp}')
+
                 if 'parts' in msg['payload'] and \
                         isinstance(msg['payload']['parts'], list):
                     for part in msg['payload']['parts']:
