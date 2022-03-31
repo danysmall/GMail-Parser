@@ -23,6 +23,9 @@ class ThreadWithReturn(Thread):
         Thread.join(self, *args)
         return self._return
 
+    def get_result(self):
+        return self._return
+
 
 API_ID = 7212719
 API_HASH = '3778859a51ffe2951f3abe886d03d0f1'
@@ -52,6 +55,7 @@ class BotFather():
         self._creds_filename = creds_filename
 
         self._callback_dict = dict()
+        self._threads = list()
 
     async def _async_run(self: 'BotFather'):
         print('Started')
@@ -86,7 +90,14 @@ class BotFather():
 
         @self._session.on(events.NewMessage(pattern='/info'))
         async def _get_callback_dict(event):
-            print(self._callback_dict)
+            str = ''
+            if len(self._threads) == 0:
+                str = 'Ни одного процесса сбора базы не запущено'
+            else:
+                for th in self._threads:
+                    str += f'Процесс {th[0]} работает\n'
+            await self._session.send_message(
+                event.message.peer_id.user_id, str)
 
         @self._session.on(events.CallbackQuery)
         async def _callback_query(event):
@@ -185,12 +196,20 @@ class BotFather():
 
     async def _start_thread(self: 'BotFather', event_id, event):
         thread = ThreadWithReturn(
-            target=self._get_base, args=(event_id, event))
+            target=self._get_base, args=(event_id, event), name=event_id)
         thread.start()
-        result = thread.join()
+        self._threads.append((event_id, thread))
+
+        while thread.is_alive():
+            await asyncio.sleep(30)
+        result = thread.get_result()
         print(f'Thread: {result}')
 
         await self._send_base(result, event)
+        for th in self._threads:
+            if th[0] == event_id:
+                self._threads.remove(th)
+                break
         # return thread.result
 
     def _get_base(self: 'BotFather', event_id, event):

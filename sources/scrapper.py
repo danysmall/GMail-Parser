@@ -7,6 +7,7 @@
 # CHANGED: Имплементация класса для работы с Excel файлами
 import os.path
 import os
+import shutil
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -14,12 +15,11 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from threading import Thread
-
 import base64
 import datetime
 import csv
 import pandas
+import typing
 
 
 class GMail():
@@ -152,38 +152,20 @@ class GMail():
             except Exception:
                 continue
 
-        for key in att_ids:
-            res = self._service.users().messages().attachments().get(
-                userId='me', messageId=id, id=att_ids[key]).execute()
+        self._files = att_ids
 
+    def _save_attachments(self, message_id):
+        self._create_dir(f'csv/{message_id}')
+
+        for key in self._files:
             try:
-                with open(f'csv/{key}', 'wb') as file:
+                res = self._service.users().messages().attachments().get(
+                    userId='me', messageId=id, id=self._files[key]).execute()
+                with open(f'csv/{message_id}/{key}', 'wb') as file:
                     file.write(base64.urlsafe_b64decode(
                         res['data']))
             except Exception:
                 pass
-        self._files = att_ids
-
-    def _parse_request_message(self: 'GMail', from_timestamp, to_timestamp):
-        try:
-            msg = self._service.users().messages().get(
-                userId='me', id=id).execute()
-        except Exception:
-            return
-
-        if int(msg['internalDate']) < from_timestamp \
-                or int(msg['internalDate']) > to_timestamp:
-            return
-
-        print(f'{from_timestamp}:{msg["internalDate"]}:{to_timestamp}')
-
-        if 'parts' in msg['payload'] and \
-                isinstance(msg['payload']['parts'], list):
-            for part in msg['payload']['parts']:
-                if part['mimeType'] == 'text/csv':
-                    fname = part['filename']
-                    att_id = part['body']['attachmentId']
-                    self._files[fname] = att_id
 
     def _parse_files(self: 'GMail', unique: str):
         vars = list()
@@ -194,7 +176,7 @@ class GMail():
 
         for filename in self._files:
             rows = list()
-            with open(f'csv/{filename}', 'r', encoding='utf-8') as file:
+            with open(f'csv/{unique}/{filename}', 'r', encoding='utf-8') as file:
                 rd = csv.reader(file, delimiter=';')
                 for row in rd:
                     rows.append(row)
@@ -229,7 +211,29 @@ class GMail():
         rf = pandas.read_csv(f'temp_{unique}.csv')
         rf.to_excel(f'excel/{unique}.xlsx', index=None, header=True)
         os.remove(f'temp_{unique}.csv')
+        try:
+            os.rmdir(f'csv/{unique}')
+        except OSError:
+            shutil.rmtree(f'csv/{unique}')
         return f'excel/{unique}.xlsx'
+
+    def _create_dirs(self: 'GMail', dirs: typing.Union[str, list]):
+        if not (isinstance(dirs, str) or isinstance(dirs, list)):
+            raise AttributeError('Argument <dirs> must be <list> or <str>')
+
+        if isinstance(dirs, str):
+            self._create_dir(dirs)
+
+        elif isinstance(dirs, list):
+            for path in dirs:
+                self._create_dir(path)
+
+    def _create_dir(self: 'GMail', path: str):
+        try:
+            os.mkdir(path)
+            print(f'>>> Created directory <{path}>')
+        except FileExistsError:
+            print(f'>>> Directory <{path}> exists')
 
     def get_file(
         self: 'GMail',
@@ -237,5 +241,9 @@ class GMail():
         to_date: tuple[int, int, int] = None,
         message_id: str = None,
     ) -> str:
+        """Return xlsx file as output."""
+        self._create_dirs(['csv', 'excel'])
+
         self.get_messages(from_date, to_date, message_id)
+        self._save_attachments(message_id)
         return self._parse_files(message_id)
