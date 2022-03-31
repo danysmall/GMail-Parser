@@ -14,6 +14,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+from threading import Thread
+
 import base64
 import datetime
 import csv
@@ -28,6 +30,7 @@ class GMail():
         token_filename: str = 'token.json',
         creds_filename: str = 'credentials.json'
     ):
+        self._files = dict()
         SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
         creds = None
 
@@ -136,17 +139,6 @@ class GMail():
                             att_id = part['body']['attachmentId']
                             att_ids[fname] = att_id
 
-                for key in att_ids:
-                    res = self._service.users().messages().attachments().get(
-                        userId='me', messageId=id, id=att_ids[key]).execute()
-
-                    try:
-                        with open(f'csv/{key}', 'wb') as file:
-                            file.write(base64.urlsafe_b64decode(
-                                res['data']))
-                    except Exception:
-                        pass
-
                 print(f'{thread_name}: Parsed {parsed_count}')
                 parsed_count += 1
 
@@ -160,7 +152,38 @@ class GMail():
             except Exception:
                 continue
 
+        for key in att_ids:
+            res = self._service.users().messages().attachments().get(
+                userId='me', messageId=id, id=att_ids[key]).execute()
+
+            try:
+                with open(f'csv/{key}', 'wb') as file:
+                    file.write(base64.urlsafe_b64decode(
+                        res['data']))
+            except Exception:
+                pass
         self._files = att_ids
+
+    def _parse_request_message(self: 'GMail', from_timestamp, to_timestamp):
+        try:
+            msg = self._service.users().messages().get(
+                userId='me', id=id).execute()
+        except Exception:
+            return
+
+        if int(msg['internalDate']) < from_timestamp \
+                or int(msg['internalDate']) > to_timestamp:
+            return
+
+        print(f'{from_timestamp}:{msg["internalDate"]}:{to_timestamp}')
+
+        if 'parts' in msg['payload'] and \
+                isinstance(msg['payload']['parts'], list):
+            for part in msg['payload']['parts']:
+                if part['mimeType'] == 'text/csv':
+                    fname = part['filename']
+                    att_id = part['body']['attachmentId']
+                    self._files[fname] = att_id
 
     def _parse_files(self: 'GMail', unique: str):
         vars = list()
