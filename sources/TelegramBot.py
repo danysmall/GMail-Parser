@@ -194,12 +194,17 @@ class BotFather():
 
     async def _send_base(self: 'BotFather', f_name, event):
         print('Send Base function')
+        print(event)
         if f_name is None:
+            print('base failed')
             await event.edit(inline.MESSAGES['base_failed'])
         else:
+            print('Upload')
             f_upd = await self._session.upload_file(f_name)
+            print('Edit')
             await event.edit(inline.MESSAGES['base_end'].format(
                 f_name.split('/')[1]))
+            print('Send file')
             await self._session.send_file(
                 event.original_update.user_id,
                 file=f_upd)
