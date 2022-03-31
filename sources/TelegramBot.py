@@ -7,6 +7,23 @@ from threading import Thread
 import scrapper
 
 
+class ThreadWithReturn(Thread):
+    """."""
+    def __init__(self, group=None, target=None, name=None,
+                 args=(), kwargs={}, Verbose=None):
+        Thread.__init__(self, group, target, name, args, kwargs)
+        self._return = None
+
+    def run(self):
+        print(type(self._target))
+        if self._target is not None:
+            self._return = self._target(*self._args, **self._kwargs)
+
+    def join(self, *args):
+        Thread.join(self, *args)
+        return self._return
+
+
 API_ID = 7212719
 API_HASH = '3778859a51ffe2951f3abe886d03d0f1'
 BOT_TOKEN = '5207506106:AAFS5ylbpNueqMC4NtzH7bSCg9GfvFDQgKY'
@@ -103,12 +120,7 @@ class BotFather():
                 ):
                     await event.edit(inline.MESSAGES['base_begin'].format(
                         event_id))
-
-                    process = Thread(
-                        target=self._get_base,
-                        args=(event_id, event)
-                    )
-                    process.start()
+                    await self._start_thread(event_id, event)
                 else:
                     await event.edit('Что-то пошло не так!')
 
@@ -171,6 +183,16 @@ class BotFather():
 
         await self._session.run_until_disconnected()
 
+    async def _start_thread(self: 'BotFather', event_id, event):
+        thread = ThreadWithReturn(
+            target=self._get_base, args=(event_id, event))
+        thread.start()
+        result = thread.join()
+        print(f'Thread: {result}')
+
+        await self._send_base(result, event)
+        # return thread.result
+
     def _get_base(self: 'BotFather', event_id, event):
         mails = scrapper.GMail(
             token_filename=self._token_filename,
@@ -190,7 +212,8 @@ class BotFather():
         )
 
         print(f'Send Base {f_name}')
-        asyncio.run(self._send_base(f_name, event))
+        return f_name
+        # asyncio.run(self._send_base(f_name, event))
 
     async def _send_base(self: 'BotFather', f_name, event):
         print('Send Base function')
@@ -199,11 +222,11 @@ class BotFather():
             print('base failed')
             await event.edit(inline.MESSAGES['base_failed'])
         else:
-            print('Upload')
-            f_upd = await self._session.upload_file(f_name)
             print('Edit')
             await event.edit(inline.MESSAGES['base_end'].format(
                 f_name.split('/')[1]))
+            print('Upload')
+            f_upd = await self._session.upload_file(f_name)
             print('Send file')
             await self._session.send_file(
                 event.original_update.user_id,
