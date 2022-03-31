@@ -87,6 +87,7 @@ class GMail():
         att_ids = dict()
         flag = True
         msg_count = 500
+        parsed_count = 1
 
         while True:
 
@@ -145,6 +146,9 @@ class GMail():
                                 res['data']))
                     except Exception:
                         pass
+
+                print(f'{thread_name}: Parsed {parsed_count}')
+                parsed_count += 1
 
             if 'nextPageToken' not in response:
                 break
