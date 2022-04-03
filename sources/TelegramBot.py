@@ -224,6 +224,7 @@ class BotFather():
             try:
                 user = await self._session.get_entity(input[0])
                 self._whitelist.append((input[0][1:], user.id))
+                self._update_whitelist_file()
                 await self._session.send_message(
                     sender_id,
                     f'Пользователь {input[0]} успешно добавлен'
