@@ -29,7 +29,7 @@ class ThreadWithReturn(Thread):
 
 API_ID = 7212719
 API_HASH = '3778859a51ffe2951f3abe886d03d0f1'
-BOT_TOKEN = '5207506106:AAFS5ylbpNueqMC4NtzH7bSCg9GfvFDQgKY'
+BOT_TOKEN = '5175209485:AAEmzJi_H9UXFh-LYatrXGURXcswjy9Wg0I'
 BOT_SESSION_NAME = 'bot-session'
 
 
@@ -56,6 +56,7 @@ class BotFather():
 
         self._callback_dict = dict()
         self._threads = list()
+        self._get_whitelist_file()
 
     async def _async_run(self: 'BotFather'):
         print('Started')
@@ -67,6 +68,9 @@ class BotFather():
 
         @self._session.on(events.NewMessage(pattern='/start'))
         async def _command_start(event):
+            uid = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(uid):
+                return
             # Send </start> command message
             message = await self._session.send_message(
                 event.message.peer_id.user_id,
@@ -90,6 +94,9 @@ class BotFather():
 
         @self._session.on(events.NewMessage(pattern='/info'))
         async def _get_callback_dict(event):
+            uid = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(uid):
+                return
             str = ''
             if len(self._threads) == 0:
                 str = 'Ни одного процесса сбора базы не запущено'
@@ -101,6 +108,9 @@ class BotFather():
 
         @self._session.on(events.CallbackQuery)
         async def _callback_query(event):
+            uid = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(uid):
+                return
             event_id = event.original_update.msg_id
 
             if event.data == b'date_start':
@@ -188,11 +198,93 @@ class BotFather():
                     buttons=inline.INLINE_MESSAGES['start']['buttons'],
                     parse_mode='html')
 
+        @self._session.on(events.NewMessage(pattern='/users'))
+        async def _get_white_list(event):
+            uid = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(uid):
+                return
+            result = ''
+            for index, user in enumerate(self._whitelist):
+                result += f'{index + 1}. @{user[0]}\n'
+            await self._session.send_message(uid, result)
+
+        @self._session.on(events.NewMessage(pattern='/adduser'))
+        async def _add_new_user(event):
+            sender_id = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(sender_id):
+                return
+            input = event.original_update.message.message.split()[1:]
+            if len(input) > 1 or not input[0][0] == '@':
+                await self._session.send_message(
+                    sender_id,
+                    'Команда введена неправильно. Шаблон команды: '
+                    + '/adduser @username')
+                return
+
+            try:
+                user = await self._session.get_entity(input[0])
+                self._whitelist.append((input[0][1:], user.id))
+                await self._session.send_message(
+                    sender_id,
+                    f'Пользователь {input[0]} успешно добавлен'
+                )
+            except ValueError:
+                await self._session.send_message(
+                    sender_id, 'Такого пользователя не найдено')
+
+        @self._session.on(events.NewMessage(pattern='/deleteuser'))
+        async def _delete_user(event):
+            uid = event.original_update.message.peer_id.user_id
+            if not self._is_in_whitelist(uid):
+                return
+            sender_id = event.original_update.message.peer_id.user_id
+            input = event.original_update.message.message.split()[1:]
+            if len(input) > 1 or not input[0][0] == '@':
+                await self._session.send_message(
+                    sender_id,
+                    'Команда введена неправильно. Шаблон команды: '
+                    + '/deleteuser @username')
+                return
+
+            uindex = None
+            for index, item in enumerate(self._whitelist):
+                if input[0][1:] == item[0]:
+                    uindex = index
+                    break
+
+            success_msg = None
+            if uindex is not None:
+                self._whitelist.pop(uindex)
+                self._update_whitelist_file()
+                success_msg = f'Пользователь {input[0]} успешно удален'
+            else:
+                success_msg = f'Пользователь {input[0]} не найден'
+            await self._session.send_message(sender_id, success_msg)
+
         @self._session.on(events.NewMessage())
         async def _any_message(event):
-            print(f'Event {event.original_update.message.id}')
+            print(f'Event {event.original_update}')
 
         await self._session.run_until_disconnected()
+
+    def _update_whitelist_file(self):
+        with open('assets/whitelist.txt', 'w', encoding='utf-8') as file:
+            for item in self._whitelist:
+                file.write(f'{item[0]}:{item[1]}')
+
+    def _get_whitelist_file(self):
+        self._whitelist = list()
+        with open('assets/whitelist.txt', 'r', encoding='utf-8') as file:
+            for line in file:
+                uname, uid = line.split(':')
+                # print(uid, uname)
+                self._whitelist.append((uname, int(uid)))
+
+    def _is_in_whitelist(self: 'BotFather', user_id) -> bool:
+        for item in self._whitelist:
+            if item[1] == user_id:
+                return True
+        return False
 
     async def _start_thread(self: 'BotFather', event_id, event):
         thread = ThreadWithReturn(
