@@ -101,9 +101,11 @@ class GMail():
                         isinstance(msg['payload']['parts'], list):
                     for part in msg['payload']['parts']:
                         if part['mimeType'] == 'text/csv':
-                            fname = part['filename']
-                            att_id = part['body']['attachmentId']
-                            att_ids[fname] = att_id
+                            for item in msg['payload']['headers']:
+                                if item['name'] == 'Subject':
+                                    fname = part['filename']
+                                    att_id = part['body']['attachmentId']
+                                    att_ids[fname] = f'{att_id}_{item["value"]}'
 
                 for key in att_ids:
                     res = self._service.users().messages().attachments().get(
@@ -134,6 +136,7 @@ class GMail():
                 rd = csv.reader(file, delimiter=';')
                 for row in rd:
                     rows.append(row)
+                rows.append(filename.split('_')[:-4])
             vars += rows[0]
 
             temp = dict()
